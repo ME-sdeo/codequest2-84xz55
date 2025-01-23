@@ -1,0 +1,138 @@
+name: Security Scan
+
+on:
+  schedule:
+    # Weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  pull_request:
+    branches:
+      - main
+      - release/*
+    paths:
+      - 'src/**'
+      - 'infrastructure/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+  security-events: write
+  packages: read
+  id-token: write
+  actions: read
+
+env:
+  # @version: v3
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # @version: 0.10.0
+  TRIVY_NO_PROGRESS: true
+  # @version: v2
+  GITLEAKS_CONFIG: ./.github/gitleaks/gitleaks.toml
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ['javascript', 'typescript']
+          queries: ['security-extended', 'security-and-quality']
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: source-code
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Scan Backend Container
+        uses: aquasecurity/trivy-action@0.10.0
+        with:
+          scan-type: image
+          image-ref: ./src/backend/Dockerfile
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+
+      - name: Upload Container Scan Results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-security
+
+  infrastructure-scan:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Scan Terraform Code
+        uses: aquasecurity/trivy-action@0.10.0
+        with:
+          scan-type: config
+          scan-ref: ./infrastructure/terraform
+          format: sarif
+          output: terraform-scan.sarif
+          severity: HIGH,CRITICAL
+          include-non-failures: true
+          exit-code: '1'
+
+      - name: Upload Infrastructure Scan Results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: terraform-scan.sarif
+          category: infrastructure-security
+
+  secret-scan:
+    name: Secret Detection Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Detect Secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          format: sarif
+          report-path: gitleaks-report.sarif
+          verbose: true
+          config-path: ./.github/gitleaks/gitleaks.toml
+
+      - name: Upload Secret Scan Results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: gitleaks-report.sarif
+          category: secret-detection
+
+  security-report:
+    name: Security Report Generation
+    needs: [codeql-analysis, container-scan, infrastructure-scan, secret-scan]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate Security Summary
+        run: |
+          echo "Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "- CodeQL Analysis: ${{ needs.codeql-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Container Scan: ${{ needs.container-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Infrastructure Scan: ${{ needs.infrastructure-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret Detection: ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
