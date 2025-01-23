@@ -1,0 +1,49 @@
+# Istio Gateway configuration for CodeQuest application
+# Version: networking.istio.io/v1beta1
+# Purpose: Manages inbound traffic with TLS termination and HTTP/HTTPS support
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: codequest-gateway
+  namespace: istio-system
+  labels:
+    app: codequest
+    component: gateway
+    environment: production
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "15020"
+    prometheus.io/path: "/stats/prometheus"
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    # HTTPS configuration with TLS
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "api.codequest.com"
+        - "codequest.example.com"
+      tls:
+        mode: SIMPLE
+        credentialName: codequest-tls  # References TLS certificate from cert-manager
+        minProtocolVersion: TLSV1_3    # Enforcing TLS 1.3 as per security requirements
+        cipherSuites:
+          - ECDHE-ECDSA-AES256-GCM-SHA384
+          - ECDHE-RSA-AES256-GCM-SHA384
+          - ECDHE-ECDSA-CHACHA20-POLY1305
+          - ECDHE-RSA-CHACHA20-POLY1305
+
+    # HTTP configuration with automatic HTTPS redirect
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "api.codequest.com"
+        - "codequest.example.com"
+      tls:
+        httpsRedirect: true  # Force redirect all HTTP traffic to HTTPS
