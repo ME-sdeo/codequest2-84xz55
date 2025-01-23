@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Team Player Achievement Badge" xmlns="http://www.w3.org/2000/svg">
+  <title>Team Player Badge</title>
+  <desc>Icon representing collaborative development achievement</desc>
+  
+  <!-- Shadow filter definition -->
+  <defs>
+    <filter id="badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Badge background circle -->
+  <circle 
+    cx="24" 
+    cy="24" 
+    r="22" 
+    fill="currentColor"
+    class="badge-background"
+    filter="url(#badge-shadow)"
+  />
+
+  <!-- Team members representation -->
+  <g class="team-members" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Center person -->
+    <circle cx="24" cy="20" r="6" fill="none" stroke="white"/>
+    <path d="M24 26v8" stroke="white"/>
+    
+    <!-- Left person -->
+    <circle cx="16" cy="24" r="4" fill="none" stroke="white"/>
+    <path d="M16 28v6" stroke="white"/>
+    
+    <!-- Right person -->
+    <circle cx="32" cy="24" r="4" fill="none" stroke="white"/>
+    <path d="M32 28v6" stroke="white"/>
+    
+    <!-- Connecting lines -->
+    <path d="M18 34h12" stroke="white"/>
+  </g>
+
+  <style>
+    .badge-background {
+      fill: #424242;
+      opacity: 0.5;
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .badge-background.earned {
+      fill: #1976D2;
+      opacity: 1;
+    }
+
+    .team-members {
+      transform-origin: center;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    @media (max-width: 24px) {
+      .team-members {
+        transform: scale(0.5);
+      }
+    }
+
+    @media (min-width: 96px) {
+      .team-members {
+        transform: scale(1.5);
+      }
+    }
+  </style>
+
+  <script>
+    // Add earned class when isEarned prop is true
+    function setEarnedState(isEarned) {
+      const background = document.querySelector('.badge-background');
+      if (isEarned) {
+        background.classList.add('earned');
+      } else {
+        background.classList.remove('earned');
+      }
+    }
+  </script>
+</svg>
