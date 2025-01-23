@@ -1,0 +1,169 @@
+# Jaeger Operator Custom Resource for CodeQuest Platform
+# Version: jaegertracing.io/v1
+# Production-grade deployment with Elasticsearch storage and OAuth security
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: codequest-jaeger
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: tracing
+    part-of: codequest
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "16686"
+    prometheus.io/path: "/metrics"
+spec:
+  strategy: production
+  storage:
+    type: elasticsearch
+    options:
+      es:
+        server-urls: http://codequest-elasticsearch:9200
+        index-prefix: codequest-jaeger
+        username: ${ES_USERNAME}
+        password: ${ES_PASSWORD}
+        version: 7
+        tls:
+          enabled: true
+          skip-host-verify: false
+          ca: /es/certificates/ca.crt
+    secretName: jaeger-es-certs
+    retention-period: 7d
+  
+  ingress:
+    enabled: true
+    security: oauth-proxy
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    hosts:
+      - jaeger.codequest.io
+    tls:
+      - secretName: jaeger-tls
+        hosts:
+          - jaeger.codequest.io
+
+  sampling:
+    type: probabilistic
+    param: 1.0
+    options:
+      default_strategy:
+        type: probabilistic
+        param: 1.0
+      service_strategies:
+        - service: codequest-backend
+          type: probabilistic
+          param: 1.0
+          operation_strategies:
+            - operation: /api/v1/points
+              type: probabilistic
+              param: 1.0
+
+  resources:
+    collector:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    query:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    agent:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  collector:
+    options:
+      kafka:
+        producer:
+          compression.type: snappy
+          batch.size: 131072
+          linger.ms: 50
+      collector:
+        zipkin:
+          host-port: :9411
+        otlp:
+          enabled: true
+    autoscale:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 80
+
+  query:
+    options:
+      query:
+        base-path: /jaeger
+        ui:
+          tracking:
+            gaID: UA-000000-2
+      log-level: info
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+
+  agent:
+    strategy: DaemonSet
+    options:
+      log-level: info
+      reporter:
+        grpc:
+          host-port: "codequest-jaeger-collector:14250"
+
+  volumeMounts:
+    - name: es-certs
+      mountPath: /es/certificates
+      readOnly: true
+
+  volumes:
+    - name: es-certs
+      secret:
+        secretName: jaeger-es-certs
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: jaeger
+            topologyKey: kubernetes.io/hostname
+
+  tolerations:
+    - key: "monitoring"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+
+  securityContext:
+    fsGroup: 1000
+    runAsUser: 1000
+    runAsNonRoot: true
+
+  serviceAccount:
+    name: jaeger-operator
+    annotations:
+      azure.workload.identity/client-id: ${AZURE_CLIENT_ID}
