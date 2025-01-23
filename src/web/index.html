@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no">
+    <meta name="theme-color" content="#1976D2">
+    <meta name="description" content="CodeQuest - Enterprise-grade Gamified Azure DevOps Development Platform">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="CodeQuest">
+    <meta property="og:description" content="Enterprise-grade Gamified Azure DevOps Development Platform">
+    <meta property="og:image" content="/src/assets/images/logos/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.codequest.com;">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+
+    <title>CodeQuest</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/src/assets/images/logos/logo-light.svg">
+    <link rel="apple-touch-icon" href="/src/assets/images/logos/logo-light.svg">
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Resource hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous">
+    <link rel="preload" href="/src/styles/global.css" as="style">
+    <link rel="preload" href="/src/main.tsx" as="script" type="module">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="/src/styles/global.css">
+
+    <!-- Performance optimizations -->
+    <script type="module" src="/src/main.tsx" async></script>
+</head>
+<body>
+    <!-- React mount point -->
+    <div id="root" role="application" aria-label="CodeQuest application"></div>
+
+    <!-- Loading state -->
+    <div id="loading-state" 
+         role="progressbar" 
+         aria-label="Application loading state"
+         style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, system-ui, sans-serif;">
+        Loading CodeQuest...
+    </div>
+
+    <!-- No JavaScript fallback -->
+    <noscript>
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, system-ui, sans-serif;">
+            JavaScript is required to run CodeQuest. Please enable JavaScript in your browser settings.
+        </div>
+    </noscript>
+</body>
+</html>
