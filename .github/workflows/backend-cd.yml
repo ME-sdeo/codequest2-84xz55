@@ -1,0 +1,118 @@
+name: Backend CD
+
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    branches: [main]
+    types: [completed]
+
+# Ensure only one deployment runs at a time
+concurrency:
+  group: backend-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Azure Container Registry settings
+  ACR_NAME: codequest.azurecr.io
+  # AKS settings
+  AKS_CLUSTER_NAME: codequest-aks
+  AKS_RESOURCE_GROUP: codequest-prod-rg
+  NAMESPACE: codequest
+  # Deployment settings
+  DEPLOYMENT_TIMEOUT: 600s
+  HEALTH_CHECK_RETRIES: 5
+  HEALTH_CHECK_DELAY: 30s
+  # Application settings
+  NODE_ENV: production
+  PORT: 3000
+  LOG_LEVEL: info
+  ENABLE_METRICS: true
+
+# Production environment with protection rules
+environment:
+  name: production
+  url: https://api.codequest.com
+  
+jobs:
+  security-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Scan container image
+        uses: azure/container-scan@v1
+        with:
+          image-name: ${{ env.ACR_NAME }}/backend:${{ github.sha }}
+          severity-threshold: HIGH
+
+  deploy:
+    name: Deploy to AKS
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Validate RBAC permissions
+        run: |
+          az aks check-acr \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }}
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: ${{ env.NAMESPACE }}
+          manifests: |
+            infrastructure/kubernetes/backend/deployment.yaml
+            infrastructure/kubernetes/backend/service.yaml
+          images: |
+            ${{ env.ACR_NAME }}/backend:${{ github.sha }}
+          strategy: blue-green
+          timeout: ${{ env.DEPLOYMENT_TIMEOUT }}
+          health-check: true
+          health-check-retries: ${{ env.HEALTH_CHECK_RETRIES }}
+          health-check-delay: ${{ env.HEALTH_CHECK_DELAY }}
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/codequest-backend -n ${{ env.NAMESPACE }}
+          kubectl get pods -n ${{ env.NAMESPACE }} -l app=codequest,component=backend
+
+      - name: Monitor deployment health
+        run: |
+          for i in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://api.codequest.com/health)
+            if [ "$response" == "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Health check failed"
+          exit 1
