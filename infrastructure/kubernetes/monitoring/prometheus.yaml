@@ -1,0 +1,127 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: codequest-prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: monitoring
+    tier: enterprise
+spec:
+  replicas: 3
+  version: v2.45.0
+  retention:
+    time: 90d
+    size: 500GB
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: managed-premium
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 500Gi
+  podMonitorSelector:
+    matchLabels:
+      app: codequest
+  serviceMonitorSelector:
+    matchLabels:
+      app: codequest
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - prometheus
+      topologyKey: kubernetes.io/hostname
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app: prometheus
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 8Gi
+    limits:
+      cpu: 4000m
+      memory: 16Gi
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceAccountName: prometheus
+  additionalScrapeConfigs:
+    name: additional-scrape-configs
+    key: prometheus-additional.yaml
+  scrapeInterval: 30s
+  evaluationInterval: 30s
+  alerting:
+    alertmanagers:
+    - namespace: monitoring
+      name: alertmanager
+      port: web
+  ruleSelector:
+    matchLabels:
+      role: alert-rules
+      app: prometheus
+  rules:
+    - name: EnterpriseAlerts
+      groups:
+      - name: codequest.rules
+        rules:
+        - alert: HighErrorRate
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (tenant) > 5
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+        - alert: HighLatencyP99
+          expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, tenant)) > 1
+          for: 5m
+          labels:
+            severity: warning
+            team: performance
+  thanos:
+    baseImage: quay.io/thanos/thanos
+    version: v0.31.0
+    objectStorageConfig:
+      name: thanos-objstore-config
+      key: objstore.yml
+  additionalArgs:
+    - --web.enable-lifecycle
+    - --web.enable-admin-api
+    - --storage.tsdb.wal-compression
+    - --storage.tsdb.retention.size=500GB
+    - --query.timeout=5m
+    - --query.max-samples=100000000
+  tolerations:
+    - key: "monitoring"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/role
+            operator: In
+            values:
+            - monitoring
+  volumes:
+    - name: prometheus-config
+      configMap:
+        name: prometheus-config
+    - name: prometheus-rules
+      configMap:
+        name: prometheus-rules
+  volumeMounts:
+    - name: prometheus-config
+      mountPath: /etc/prometheus/config
+    - name: prometheus-rules
+      mountPath: /etc/prometheus/rules
