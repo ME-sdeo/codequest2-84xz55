@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./src/backend
+      target: development
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    volumes:
+      - ./src/backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DEBUG=codequest:*
+      - API_PREFIX=/api/v1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=debug
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - codequest_dev
+
+  web:
+    build:
+      context: ./src/web
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src/web:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000/api/v1
+      - VITE_WS_URL=ws://localhost:3000
+      - VITE_DEBUG=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - backend
+    networks:
+      - codequest_dev
+
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=codequest
+      - POSTGRES_PASSWORD=development
+      - POSTGRES_DB=codequest
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codequest"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - codequest_dev
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass development
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - codequest_dev
+
+volumes:
+  postgres_data:
+    name: codequest_postgres_dev
+  redis_data:
+    name: codequest_redis_dev
+
+networks:
+  codequest_dev:
+    driver: bridge
+    enable_ipv6: false
+    attachable: true
