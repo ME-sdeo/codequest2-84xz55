@@ -1,0 +1,106 @@
+name: Web CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/web/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/web/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            src/web/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-npm-cache-web-${{ hashFiles('src/web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-cache-web-
+
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+        
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        env:
+          CI: true
+          
+      - name: Check test coverage threshold
+        run: |
+          COVERAGE=$(npm run test:coverage | grep -o '[0-9.]*%' | head -1 | cut -d'%' -f1)
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "Test coverage ($COVERAGE%) is below threshold (80%)"
+            exit 1
+          fi
+
+      - name: Security audit
+        run: npm audit
+        continue-on-error: false
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: src/web/dist
+          key: ${{ runner.os }}-build-web-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-web-
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: src/web/dist
+          retention-days: 7
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: src/web/coverage
+          retention-days: 7
+
+      - name: Check for bundle size changes
+        run: |
+          BUNDLE_SIZE=$(du -sh dist | cut -f1)
+          echo "Bundle size: $BUNDLE_SIZE"
+          if [[ "$BUNDLE_SIZE" > "10M" ]]; then
+            echo "Warning: Bundle size exceeds 10MB threshold"
+          fi
