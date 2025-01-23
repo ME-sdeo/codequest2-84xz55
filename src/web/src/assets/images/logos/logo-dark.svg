@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="48" viewBox="0 0 200 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CodeQuest Logo">
+    <!-- Quest Path/Journey Line -->
+    <path d="M20 24 Q40 8 60 24 Q80 40 100 24 Q120 8 140 24 Q160 40 180 24" 
+          stroke="#1976D2" 
+          stroke-width="3" 
+          stroke-linecap="round"
+          fill="none"/>
+    
+    <!-- Code Brackets -->
+    <path d="M15 12 L5 24 L15 36" 
+          stroke="#424242" 
+          stroke-width="4" 
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+    
+    <path d="M185 12 L195 24 L185 36" 
+          stroke="#424242" 
+          stroke-width="4" 
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+    
+    <!-- Letter C -->
+    <path d="M45 18 A8 8 0 0 0 45 30" 
+          stroke="#424242" 
+          stroke-width="4" 
+          stroke-linecap="round"
+          fill="none"/>
+    
+    <!-- Letter Q -->
+    <circle cx="100" cy="24" r="8" 
+            stroke="#424242" 
+            stroke-width="4" 
+            fill="none"/>
+    <path d="M105 29 L108 32" 
+          stroke="#424242" 
+          stroke-width="4" 
+          stroke-linecap="round"/>
+    
+    <!-- Decorative Dots -->
+    <circle cx="60" cy="24" r="2" fill="#1976D2"/>
+    <circle cx="140" cy="24" r="2" fill="#1976D2"/>
+    
+    <!-- Optimized for performance with minimal points -->
+    <metadata>
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <rdf:Description>
+                <dc:title>CodeQuest Logo</dc:title>
+                <dc:description>CodeQuest brand logo - dark variant for light backgrounds</dc:description>
+                <dc:format>image/svg+xml</dc:format>
+                <dc:creator>CodeQuest Design Team</dc:creator>
+            </rdf:Description>
+        </rdf:RDF>
+    </metadata>
+    
+    <!-- Ensure high contrast mode compatibility -->
+    <style>
+        @media (forced-colors: active) {
+            path, circle {
+                stroke: CanvasText;
+            }
+            circle[fill="#1976D2"] {
+                fill: CanvasText;
+            }
+        }
+    </style>
+</svg>
