@@ -1,0 +1,39 @@
+# Ensures complete coverage of codebase ownership
+* @tech-leads
+
+# Backend source code ownership
+src/backend/** @backend-team
+
+# Frontend source code ownership
+src/web/** @frontend-team
+
+# Infrastructure and deployment code ownership
+infrastructure/** @devops-team
+
+# CI/CD workflow ownership with security oversight
+.github/workflows/** @devops-team @security-team
+
+# Authentication module ownership - Backend
+src/backend/src/modules/auth/** @security-team @backend-team
+
+# Authentication components ownership - Frontend
+src/web/src/components/auth/** @security-team @frontend-team
+
+# Backend configuration ownership
+src/backend/src/config/** @backend-team @devops-team @security-team
+
+# Frontend configuration ownership
+src/web/src/config/** @frontend-team @devops-team @security-team
+
+# Test files ownership
+*.test.ts @qa-team
+*.test.tsx @qa-team
+
+# Package dependency management ownership
+package*.json @tech-leads @security-team
+
+# Container definition ownership
+**/Dockerfile @devops-team @security-team
+
+# Environment configuration ownership
+**/*.env.* @tech-leads @security-team
