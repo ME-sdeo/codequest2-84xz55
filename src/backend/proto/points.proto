@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package codequest.points;
+
+option go_package = "./points";
+
+import "google/protobuf/timestamp.proto";  // v3
+import "./activity.proto";
+
+// Request message for point calculation
+message CalculatePointsRequest {
+    string tenant_id = 1;
+    string team_member_id = 2;
+    codequest.activity.ActivityType activity_type = 3;
+    bool is_ai_generated = 4;
+    map<string, float> custom_modifiers = 5;
+}
+
+// Response message for point calculation
+message CalculatePointsResponse {
+    int32 points = 1;
+    float ai_modifier = 2;
+    map<string, float> applied_modifiers = 3;
+}
+
+// Request message for awarding points
+message AwardPointsRequest {
+    string tenant_id = 1;
+    string team_member_id = 2;
+    string activity_id = 3;
+    int32 points = 4;
+    codequest.activity.ActivityType activity_type = 5;
+    bool is_ai_generated = 6;
+    map<string, float> applied_modifiers = 7;
+}
+
+// Response message for awarding points
+message AwardPointsResponse {
+    string points_history_id = 1;
+    int32 total_points = 2;
+    int32 current_level = 3;
+    bool level_up = 4;
+}
+
+// Request message for streaming point updates
+message StreamPointUpdatesRequest {
+    string tenant_id = 1;
+    string team_member_id = 2;
+}
+
+// Message for point update stream
+message PointUpdateEvent {
+    string team_member_id = 1;
+    int32 points_delta = 2;
+    int32 total_points = 3;
+    int32 current_level = 4;
+    bool level_up = 5;
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+// Request message for getting level progress
+message GetLevelProgressRequest {
+    string tenant_id = 1;
+    string team_member_id = 2;
+}
+
+// Response message for level progress
+message GetLevelProgressResponse {
+    int32 current_level = 1;
+    int32 total_points = 2;
+    int32 points_to_next_level = 3;
+    float progress_percentage = 4;
+}
+
+// Request message for team leaderboard
+message GetTeamLeaderboardRequest {
+    string tenant_id = 1;
+    string team_id = 2;
+    int32 limit = 3;
+    string page_token = 4;
+}
+
+// Entry in the leaderboard
+message LeaderboardEntry {
+    string team_member_id = 1;
+    int32 total_points = 2;
+    int32 current_level = 3;
+    int32 rank = 4;
+}
+
+// Response message for team leaderboard
+message GetTeamLeaderboardResponse {
+    repeated LeaderboardEntry entries = 1;
+    string next_page_token = 2;
+}
+
+// Request message for batch point updates
+message BatchUpdatePointsRequest {
+    string tenant_id = 1;
+    repeated AwardPointsRequest updates = 2;
+}
+
+// Response message for batch point updates
+message BatchUpdatePointsResponse {
+    repeated AwardPointsResponse results = 1;
+}
+
+// Points configuration message
+message PointsConfig {
+    string tenant_id = 1;
+    map<int32, int32> base_points = 2;
+    float ai_modifier = 3;
+    map<int32, int32> level_thresholds = 4;
+    int32 update_frequency_ms = 5;
+    map<string, float> custom_modifiers = 6;
+}
+
+// Points history record
+message PointsHistory {
+    string id = 1;
+    string tenant_id = 2;
+    string team_member_id = 3;
+    string activity_id = 4;
+    int32 points = 5;
+    codequest.activity.ActivityType activity_type = 6;
+    bool is_ai_generated = 7;
+    map<string, float> applied_modifiers = 8;
+    google.protobuf.Timestamp created_at = 9;
+}
+
+// Points service definition
+service PointsService {
+    // Calculates points for an activity
+    rpc CalculatePoints(CalculatePointsRequest) returns (CalculatePointsResponse) {}
+
+    // Awards points to a team member
+    rpc AwardPoints(AwardPointsRequest) returns (AwardPointsResponse) {}
+
+    // Streams real-time point updates
+    rpc StreamPointUpdates(StreamPointUpdatesRequest) returns (stream PointUpdateEvent) {}
+
+    // Gets level progress for a team member
+    rpc GetLevelProgress(GetLevelProgressRequest) returns (GetLevelProgressResponse) {}
+
+    // Gets team leaderboard
+    rpc GetTeamLeaderboard(GetTeamLeaderboardRequest) returns (GetTeamLeaderboardResponse) {}
+
+    // Batch updates points for multiple activities
+    rpc BatchUpdatePoints(BatchUpdatePointsRequest) returns (BatchUpdatePointsResponse) {}
+}
