@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codequest-web
+  namespace: default
+  labels:
+    app: codequest-web
+    tier: frontend
+    component: web-ui
+    part-of: codequest
+spec:
+  # High availability with 3 replicas
+  replicas: 3
+  
+  # Rolling update strategy for zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  
+  # Pod selector matching service and HPA configurations
+  selector:
+    matchLabels:
+      app: codequest-web
+  
+  template:
+    metadata:
+      labels:
+        app: codequest-web
+        tier: frontend
+        component: web-ui
+        part-of: codequest
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+    
+    spec:
+      # Container security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      
+      # Container specifications
+      containers:
+      - name: codequest-web
+        image: #{ACR_REGISTRY}#/codequest/web:#{IMAGE_TAG}#
+        imagePullPolicy: Always
+        
+        # Container ports
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        
+        # Resource requests and limits for predictable performance
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        
+        # Environment configuration from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: codequest-web-config
+        
+        # Liveness probe for container health monitoring
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        
+        # Readiness probe for traffic routing
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        
+        # Startup probe for initialization
+        startupProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30
+      
+      # Pod termination grace period
+      terminationGracePeriodSeconds: 60
+      
+      # Pod affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - codequest-web
+              topologyKey: kubernetes.io/hostname
+      
+      # Node affinity for performance
+      nodeSelector:
+        kubernetes.io/os: linux
+      
+      # Image pull secrets for ACR access
+      imagePullSecrets:
+      - name: acr-secret
