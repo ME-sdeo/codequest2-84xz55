@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: default
+  labels:
+    app: codequest
+    component: backend
+    environment: production
+data:
+  # Application Core Settings
+  NODE_ENV: "production"
+  API_PREFIX: "/api/v1"
+  PORT: "3000"
+  
+  # Database Configuration
+  DB_TYPE: "postgres"
+  DB_HOST: "postgres-master"
+  DB_PORT: "5432"
+  DB_POOL_MIN: "10"
+  DB_POOL_MAX: "100"
+  DB_TENANT_ISOLATION: "true"
+  DB_RETRY_ATTEMPTS: "3"
+  DB_STATEMENT_TIMEOUT: "30000"
+  DB_IDLE_TIMEOUT: "60000"
+  DB_MAX_QUERY_TIME: "1000"
+  DB_ENTITY_PREFIX: "cq_"
+  
+  # Redis Cache Configuration
+  REDIS_HOST: "redis-master"
+  REDIS_PORT: "6379"
+  REDIS_CLUSTER_ENABLED: "true"
+  REDIS_KEY_PREFIX: "codequest:"
+  REDIS_TTL: "3600"
+  REDIS_COMPRESSION_THRESHOLD: "1024"
+  REDIS_MAX_RETRIES: "3"
+  REDIS_RETRY_DELAY: "1000"
+  REDIS_READY_CHECK: "true"
+  
+  # Queue Configuration
+  QUEUE_PREFIX: "codequest"
+  QUEUE_CONCURRENCY: "10"
+  QUEUE_RETRY_STRATEGY: "exponential"
+  QUEUE_RETRY_ATTEMPTS: "3"
+  QUEUE_BACKOFF_DELAY: "5000"
+  QUEUE_STALLED_INTERVAL: "30000"
+  QUEUE_MAX_STALLED: "2"
+  
+  # Performance Optimization
+  RATE_LIMIT: "100"
+  RATE_TTL: "60"
+  CONNECTION_TIMEOUT: "10000"
+  DISCONNECT_TIMEOUT: "5000"
+  KEEP_ALIVE: "30000"
+  
+  # Monitoring Settings
+  METRICS_ENABLED: "true"
+  METRICS_COLLECT_INTERVAL: "10000"
+  METRICS_PREFIX: "codequest_"
+  TRACING_ENABLED: "true"
+  TRACING_SAMPLING_RATE: "0.1"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Multi-tenant Configuration
+  TENANT_ISOLATION_ENABLED: "true"
+  TENANT_SEPARATOR: "::"
+  SCHEMA_PREFIX: "tenant_"
+  
+  # Security Settings
+  CORS_MAX_AGE: "86400"
+  SSL_ENABLED: "true"
+  SSL_REJECT_UNAUTHORIZED: "true"
+  TLS_ENABLED: "true"
