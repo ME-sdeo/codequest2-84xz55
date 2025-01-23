@@ -1,0 +1,255 @@
+/**
+ * CodeQuest Design System - Animations
+ * Version: 1.0.0
+ * 
+ * Core animation utilities following Material Design principles
+ * with performance optimizations and accessibility considerations.
+ */
+
+@import './variables.css';
+
+/* Base Keyframe Animations
+ * All animations optimized for performance and RTL support
+ * Timing functions use Material Design standards
+ */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-out {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translateX(-1px);
+  }
+  20%, 80% {
+    transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    transform: translateX(-4px);
+  }
+  40%, 60% {
+    transform: translateX(4px);
+  }
+}
+
+/* Animation Utility Classes
+ * Performance-optimized with hardware acceleration
+ * and containment where appropriate
+ */
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout, paint;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s var(--ease-standard) forwards;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-slide-out {
+  animation: slide-out 0.25s var(--ease-standard) forwards;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s var(--ease-standard) forwards;
+  will-change: opacity;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.2s var(--ease-standard) forwards;
+  will-change: opacity;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s var(--ease-standard) forwards;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.animate-scale-out {
+  animation: scale-out 0.2s var(--ease-standard) forwards;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.animate-ripple {
+  animation: ripple 0.6s var(--ease-standard);
+  will-change: transform, opacity;
+  contain: layout, paint;
+}
+
+.animate-progress {
+  animation: progress 2s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-shake {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* RTL Support
+ * Automatically handles right-to-left layouts
+ */
+
+[dir="rtl"] .animate-slide-in {
+  animation-name: slide-out;
+}
+
+[dir="rtl"] .animate-slide-out {
+  animation-name: slide-in;
+}
+
+/* Accessibility
+ * Respects user motion preferences
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .animate-pulse,
+  .animate-spin,
+  .animate-progress {
+    animation: none !important;
+  }
+}
+
+/* Performance Optimizations
+ * Hardware acceleration and containment strategies
+ */
+
+.hardware-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+.contain-layout {
+  contain: layout;
+}
+
+.contain-strict {
+  contain: strict;
+}
