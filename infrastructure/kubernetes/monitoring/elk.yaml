@@ -1,0 +1,251 @@
+# ELK Stack Kubernetes Configuration v1.0.0
+# Implements production-grade logging infrastructure with high availability,
+# security controls and SOC 2 compliance features
+
+---
+# Elasticsearch Master Nodes StatefulSet
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: codequest-elasticsearch
+  namespace: monitoring
+  labels:
+    app: elasticsearch
+    component: logging
+    environment: production
+  annotations:
+    elasticsearch.k8s.elastic.co/secure-settings: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9114"
+spec:
+  version: 8.9.0
+  secureSettings:
+    - secretName: elasticsearch-secure-settings
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+  nodeSets:
+    # Master nodes configuration
+    - name: master
+      count: 3
+      config:
+        node.roles: ["master"]
+        xpack.security.enabled: true
+        xpack.security.audit.enabled: true
+        xpack.monitoring.collection.enabled: true
+      podTemplate:
+        metadata:
+          annotations:
+            co.elastic.logs/enabled: "true"
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      elasticsearch.k8s.elastic.co/cluster-name: codequest-elasticsearch
+                      elasticsearch.k8s.elastic.co/node-master: "true"
+                  topologyKey: kubernetes.io/hostname
+          initContainers:
+            - name: sysctl
+              securityContext:
+                privileged: true
+              command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  cpu: "1000m"
+                  memory: "4Gi"
+                limits:
+                  cpu: "2000m"
+                  memory: "8Gi"
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms4g -Xmx4g"
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: managed-premium
+            resources:
+              requests:
+                storage: 100Gi
+
+    # Data nodes configuration
+    - name: data
+      count: 3
+      config:
+        node.roles: ["data"]
+        xpack.security.enabled: true
+        xpack.security.audit.enabled: true
+        xpack.monitoring.collection.enabled: true
+      podTemplate:
+        metadata:
+          annotations:
+            co.elastic.logs/enabled: "true"
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      elasticsearch.k8s.elastic.co/cluster-name: codequest-elasticsearch
+                      elasticsearch.k8s.elastic.co/node-data: "true"
+                  topologyKey: kubernetes.io/hostname
+          initContainers:
+            - name: sysctl
+              securityContext:
+                privileged: true
+              command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  cpu: "2000m"
+                  memory: "8Gi"
+                limits:
+                  cpu: "4000m"
+                  memory: "16Gi"
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms8g -Xmx8g"
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: managed-premium
+            resources:
+              requests:
+                storage: 500Gi
+
+---
+# Kibana Deployment
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: codequest-kibana
+  namespace: monitoring
+  labels:
+    app: kibana
+    component: logging
+    environment: production
+spec:
+  version: 8.9.0
+  count: 2
+  elasticsearchRef:
+    name: codequest-elasticsearch
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          env:
+            - name: ELASTICSEARCH_REQUESTTIMEOUT
+              value: "30000"
+            - name: LOGGING_VERBOSE
+              value: "true"
+            - name: MONITORING_ENABLED
+              value: "true"
+
+---
+# Logstash StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: codequest-logstash
+  namespace: monitoring
+  labels:
+    app: logstash
+    component: logging
+    environment: production
+spec:
+  serviceName: logstash
+  replicas: 2
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9198"
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: logstash
+          image: docker.elastic.co/logstash/logstash:8.9.0
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "1000m"
+              memory: "4Gi"
+          env:
+            - name: LS_JAVA_OPTS
+              value: "-Xms2g -Xmx2g"
+          ports:
+            - containerPort: 5044
+              name: beats
+            - containerPort: 9198
+              name: metrics
+          volumeMounts:
+            - name: logstash-config
+              mountPath: /usr/share/logstash/config
+            - name: logstash-pipeline
+              mountPath: /usr/share/logstash/pipeline
+      volumes:
+        - name: logstash-config
+          configMap:
+            name: logstash-config
+        - name: logstash-pipeline
+          configMap:
+            name: logstash-pipeline
+
+---
+# Index Lifecycle Management Policy
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: IndexLifecyclePolicy
+metadata:
+  name: logs-policy
+  namespace: monitoring
+spec:
+  policy:
+    phases:
+      hot:
+        actions:
+          rollover:
+            max_age: "1d"
+            max_size: "50gb"
+      warm:
+        min_age: "2d"
+        actions:
+          shrink:
+            number_of_shards: 1
+          forcemerge:
+            max_num_segments: 1
+      cold:
+        min_age: "30d"
+        actions:
+          freeze: {}
+      delete:
+        min_age: "90d"
+        actions:
+          delete: {}
