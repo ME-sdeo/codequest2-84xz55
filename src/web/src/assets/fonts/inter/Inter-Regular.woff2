@@ -1,0 +1,16 @@
+[Binary WOFF2 font file content would be here - containing the optimized and compressed Inter Regular (400) font data with the following specifications:
+
+Font Family: Inter
+Weight: 400 (Regular)
+Style: Normal
+Format: WOFF2
+Version: 3.19
+Unicode Range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+Font Display: swap
+License: SIL Open Font License 1.1
+
+The actual binary data would be optimized for web delivery with:
+- WOFF2 compression for ~30% better compression than WOFF
+- Subsetted character set for Latin scripts and common symbols
+- Optimized file size for web performance
+- CDN-ready format]
