@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Bug Hunter achievement badge" lang="en" xmlns="http://www.w3.org/2000/svg">
+    <title>Bug Hunter Badge</title>
+    <desc>Icon representing bug fixing achievements</desc>
+    
+    <!-- Base Circle -->
+    <circle cx="24" cy="24" r="22" fill="currentColor" stroke="currentColor" stroke-width="2" class="badge-base"/>
+    
+    <!-- Bug Icon -->
+    <g class="bug-icon">
+        <!-- Bug Body -->
+        <path d="M24 16c-4.4 0-8 3.6-8 8v8c0 4.4 3.6 8 8 8s8-3.6 8-8v-8c0-4.4-3.6-8-8-8z" fill="white"/>
+        
+        <!-- Antennae -->
+        <path d="M20 16v-4M28 16v-4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        
+        <!-- Legs -->
+        <path d="M16 20h-4M36 20h-4M16 28h-4M36 28h-4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        
+        <!-- Segments -->
+        <path d="M20 24h8M20 28h8M20 32h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+        
+        .badge-base {
+            transition: fill 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        /* Earned State */
+        svg:not(.unearned):not(.progress) .badge-base {
+            fill: #1976D2;
+            stroke: #1976D2;
+            opacity: 1;
+        }
+        
+        /* Unearned State */
+        svg.unearned .badge-base {
+            fill: #424242;
+            stroke: #424242;
+            opacity: 0.5;
+        }
+        
+        /* Progress State */
+        svg.progress .badge-base {
+            fill: #1976D2;
+            stroke: #1976D2;
+            opacity: 0.75;
+        }
+        
+        /* Hover Effect */
+        svg:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Focus State */
+        svg:focus {
+            outline: 2px solid #1976D2;
+            outline-offset: 2px;
+        }
+        
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            svg.unearned .badge-base {
+                fill: #757575;
+                stroke: #757575;
+            }
+        }
+        
+        /* Responsive Sizing */
+        @media (max-width: 600px) {
+            svg {
+                width: 32px;
+                height: 32px;
+            }
+        }
+        
+        @media (min-width: 601px) and (max-width: 1024px) {
+            svg {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+    
+    <!-- Ensure proper scaling for all viewports -->
+    <script>
+        //<![CDATA[
+        if (document.currentScript) {
+            const svg = document.currentScript.parentElement;
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        }
+        //]]>
+    </script>
+</svg>
