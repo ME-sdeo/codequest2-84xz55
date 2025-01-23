@@ -1,0 +1,285 @@
+# Grafana Deployment Configuration v1.0.0
+# Implements enterprise-grade monitoring visualization with high availability,
+# security controls, and comprehensive dashboard provisioning
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codequest-grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+    part-of: codequest
+    version: 9.5.0
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: monitoring
+    spec:
+      serviceAccountName: grafana-sa
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - grafana
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: grafana
+          image: grafana/grafana:9.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: admin-password
+            - name: GF_AUTH_GENERIC_OAUTH_ENABLED
+              value: "true"
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: oauth-client-id
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: oauth-client-secret
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: grafana-config
+              mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+            - name: grafana-dashboards-config
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+            - name: grafana-dashboards
+              mountPath: /var/lib/grafana/dashboards
+              readOnly: true
+      volumes:
+        - name: grafana-storage
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        - name: grafana-config
+          configMap:
+            name: grafana-datasources
+        - name: grafana-dashboards-config
+          configMap:
+            name: grafana-dashboards-config
+        - name: grafana-dashboards
+          configMap:
+            name: grafana-dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://codequest-prometheus:9090
+        isDefault: true
+        jsonData:
+          timeInterval: "30s"
+          queryTimeout: "60s"
+      - name: Jaeger
+        type: jaeger
+        access: proxy
+        url: http://codequest-jaeger-query:16686
+        jsonData:
+          nodeGraph:
+            enabled: true
+      - name: Elasticsearch
+        type: elasticsearch
+        access: proxy
+        url: http://codequest-elasticsearch:9200
+        jsonData:
+          timeField: "@timestamp"
+          version: "7.0.0"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        folder: ''
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  system-overview.json: |
+    {
+      "title": "System Overview",
+      "uid": "system-overview",
+      "panels": [
+        {
+          "title": "CPU Usage",
+          "type": "graph"
+        },
+        {
+          "title": "Memory Usage",
+          "type": "graph"
+        },
+        {
+          "title": "Network Traffic",
+          "type": "graph"
+        }
+      ]
+    }
+  application-performance.json: |
+    {
+      "title": "Application Performance",
+      "uid": "app-performance",
+      "panels": [
+        {
+          "title": "Request Rate",
+          "type": "graph"
+        },
+        {
+          "title": "Error Rate",
+          "type": "graph"
+        },
+        {
+          "title": "Latency P95/P99",
+          "type": "graph"
+        }
+      ]
+    }
+  security-monitoring.json: |
+    {
+      "title": "Security Monitoring",
+      "uid": "security-monitoring",
+      "panels": [
+        {
+          "title": "Failed Logins",
+          "type": "graph"
+        },
+        {
+          "title": "API Usage Patterns",
+          "type": "graph"
+        },
+        {
+          "title": "Authorization Failures",
+          "type": "graph"
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: grafana
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - grafana.codequest.io
+      secretName: grafana-tls
+  rules:
+    - host: grafana.codequest.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  name: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 50Gi
