@@ -1,0 +1,79 @@
+# Istio VirtualService Configuration v1beta1
+# Purpose: Defines traffic routing rules for CodeQuest application
+# Dependencies: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: codequest-virtual-service
+  namespace: istio-system
+  labels:
+    app: codequest
+    component: routing
+    environment: production
+spec:
+  # Define the hostnames that this VirtualService will handle
+  hosts:
+    - api.codequest.com
+    - codequest.example.com
+  
+  # Reference to the Istio Gateway handling ingress traffic
+  gateways:
+    - codequest-gateway
+  
+  # HTTP routing rules
+  http:
+    # Backend API routing configuration
+    - match:
+        - uri:
+            prefix: /api
+      route:
+        - destination:
+            host: codequest-backend
+            subset: backend  # References subset defined in DestinationRule
+            port:
+              number: 80
+      # Timeout and retry configuration for SLA compliance (<500ms for 95% requests)
+      timeout: 3s
+      retries:
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: connect-failure,refused-stream,unavailable,cancelled,resource-exhausted,5xx
+      
+      # CORS policy configuration for secure cross-origin requests
+      corsPolicy:
+        allowOrigins:
+          - exact: https://codequest.example.com
+        allowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        allowHeaders:
+          - Authorization
+          - Content-Type
+        maxAge: 24h
+        allowCredentials: true
+      
+      # Fault injection for testing (disabled in production)
+      fault:
+        delay:
+          percentage:
+            value: 0
+          fixedDelay: 0s
+      
+      # Mirror traffic for testing (disabled in production)
+      mirror:
+        host: codequest-backend-canary
+        subset: canary
+      mirrorPercentage:
+        value: 0
+      
+      # Headers manipulation
+      headers:
+        request:
+          set:
+            x-request-id: "%REQ(x-request-id)%"
+        response:
+          add:
+            x-served-by: "codequest-istio"
