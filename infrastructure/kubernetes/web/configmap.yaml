@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: codequest-web-config
+  namespace: default
+  labels:
+    app: codequest-web
+    tier: frontend
+    environment: production
+
+data:
+  # API Configuration
+  VITE_API_URL: "https://api.codequest.com"
+  VITE_API_VERSION: "v1"
+  VITE_API_TIMEOUT: "30000"
+  VITE_API_MAX_RETRIES: "3"
+  VITE_API_RETRY_DELAY: "1000"
+
+  # WebSocket Configuration
+  VITE_WEBSOCKET_URL: "wss://api.codequest.com"
+  VITE_WEBSOCKET_RECONNECT_ATTEMPTS: "5"
+
+  # Application Information
+  VITE_APP_TITLE: "CodeQuest"
+  VITE_APP_DESCRIPTION: "Developer Productivity Gamification Platform"
+
+  # Theme Colors (Material Design 3)
+  VITE_PRIMARY_COLOR: "#1976D2"
+  VITE_SECONDARY_COLOR: "#424242"
+  VITE_ERROR_COLOR: "#D32F2F"
+  VITE_SUCCESS_COLOR: "#2E7D32"
+  VITE_WARNING_COLOR: "#ED6C02"
+
+  # Typography Configuration
+  VITE_FONT_PRIMARY: "Inter"
+  VITE_FONT_SECONDARY: "SF Pro"
+  VITE_FONT_MONO: "JetBrains Mono"
+  VITE_FONT_CDN_URL: "https://fonts.googleapis.com"
+
+  # Responsive Breakpoints
+  VITE_BREAKPOINT_MOBILE: "0"
+  VITE_BREAKPOINT_TABLET: "600"
+  VITE_BREAKPOINT_DESKTOP: "1240"
+
+  # Layout Configuration
+  VITE_SPACING_UNIT: "8"
+
+  # Monitoring and Analytics
+  VITE_ENABLE_ANALYTICS: "true"
+  VITE_ENABLE_SENTRY: "true"
+  VITE_ENABLE_PERFORMANCE_MONITORING: "true"
+
+  # Environment
+  VITE_ENVIRONMENT: "production"
