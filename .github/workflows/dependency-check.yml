@@ -1,0 +1,165 @@
+name: Dependency Security Check
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/backend/package*.json'
+      - 'src/web/package*.json'
+
+env:
+  NODE_VERSION: '18'
+  SEVERITY_THRESHOLD: 'moderate'
+  REQUIRED_APPROVALS: '1'
+  DEPENDENCY_CACHE_KEY: "npm-${{ hashFiles('**/package-lock.json') }}"
+
+jobs:
+  check_backend_deps:
+    name: Check Backend Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/backend/package-lock.json
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ env.DEPENDENCY_CACHE_KEY }}
+          restore-keys: |
+            npm-
+
+      - name: Install Dependencies
+        working-directory: src/backend
+        run: npm ci
+
+      - name: Run Security Audit
+        working-directory: src/backend
+        run: |
+          npm audit --json --audit-level=${{ env.SEVERITY_THRESHOLD }} > audit_report.json || true
+          npm outdated --json > outdated_report.json || true
+
+      - name: Generate SBOM
+        working-directory: src/backend
+        run: |
+          npm list --json > sbom.json
+          echo "Generated SBOM for backend dependencies"
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-security-reports
+          path: |
+            src/backend/audit_report.json
+            src/backend/outdated_report.json
+            src/backend/sbom.json
+
+  check_frontend_deps:
+    name: Check Frontend Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ env.DEPENDENCY_CACHE_KEY }}
+          restore-keys: |
+            npm-
+
+      - name: Install Dependencies
+        working-directory: src/web
+        run: npm ci
+
+      - name: Run Security Audit
+        working-directory: src/web
+        run: |
+          npm audit --json --audit-level=${{ env.SEVERITY_THRESHOLD }} > audit_report.json || true
+          npm outdated --json > outdated_report.json || true
+
+      - name: Generate SBOM
+        working-directory: src/web
+        run: |
+          npm list --json > sbom.json
+          echo "Generated SBOM for frontend dependencies"
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-security-reports
+          path: |
+            src/web/audit_report.json
+            src/web/outdated_report.json
+            src/web/sbom.json
+
+  auto_merge:
+    name: Auto-merge Dependabot PRs
+    needs: [check_backend_deps, check_frontend_deps]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot Metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1.6.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Security Impact
+        run: |
+          if [[ "${{ steps.metadata.outputs.update-type }}" == "version-update:semver-patch" || 
+                "${{ steps.metadata.outputs.update-type }}" == "version-update:semver-minor" ]]; then
+            echo "Update type is safe for auto-merge"
+            echo "SAFE_UPDATE=true" >> $GITHUB_ENV
+          else
+            echo "Major version update requires manual review"
+            echo "SAFE_UPDATE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Verify CI Status
+        if: env.SAFE_UPDATE == 'true'
+        run: |
+          gh pr checks ${{ github.event.pull_request.number }} --repo ${{ github.repository }} | grep -q "success" || exit 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge PR
+        if: env.SAFE_UPDATE == 'true'
+        run: |
+          gh pr merge --auto --merge "$PR_URL"
+          echo "Auto-merged Dependabot PR #$PR_NUMBER" >> merge_audit.log
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload Merge Audit Log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: merge-audit-log
+          path: merge_audit.log
