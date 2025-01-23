@@ -1,0 +1,61 @@
+# Kubernetes Ingress configuration for CodeQuest web frontend
+# API Version: networking.k8s.io/v1
+# Purpose: Route external HTTPS traffic to frontend service with TLS termination and security features
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codequest-web-ingress
+  namespace: default
+  labels:
+    app: codequest-web
+    tier: frontend
+    environment: production
+    managed-by: kubernetes
+    component: ingress
+  annotations:
+    # Ingress Controller Configuration
+    kubernetes.io/ingress.class: "nginx"
+    
+    # SSL/TLS Security Configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.3"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    
+    # Security Headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "Strict-Transport-Security: max-age=31536000";
+      more_set_headers "Content-Security-Policy: default-src 'self'";
+    
+    # Proxy Configuration for Performance
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    
+    # Certificate Management
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Monitoring Configuration
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "10254"
+
+spec:
+  tls:
+    - hosts:
+        - codequest.example.com
+      secretName: codequest-tls
+  rules:
+    - host: codequest.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: codequest-web
+                port:
+                  number: 80
