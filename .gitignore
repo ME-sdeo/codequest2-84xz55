@@ -1,0 +1,86 @@
+node_modules/
+.yarn-integrity
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+*.env.docker
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log
+
+# Test coverage
+coverage/
+
+# IDE and editor files
+.idea/
+.vscode/
+*~
+*.swp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Infrastructure as Code
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Temporary files
+*~
+*.bak
+*.tmp
+*.temp
+
+# Debug files
+.debug/
+debug.log
+
+# Local development
+.local/
+.dev/
+
+# Docker
+.docker/
+*.env.docker
+
+# SSL/TLS Certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.der
+*.p7b
+*.p7c
+*.pfx
+*.p12
+
+# Cache directories
+.cache/
+.npm/
+.eslintcache
+
+# Test files
+.nyc_output/
+junit.xml
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
