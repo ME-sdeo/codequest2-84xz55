@@ -1,0 +1,215 @@
+/**
+ * CodeQuest Design System - Typography
+ * Version: 1.0.0
+ * 
+ * Implements comprehensive typography system with:
+ * - Optimized font loading and performance
+ * - WCAG 2.1 AA accessibility compliance
+ * - RTL language support
+ * - Print media optimization
+ * - Forced colors mode support
+ */
+
+@import './variables.css';
+
+/* Base Typography Settings
+-------------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  src: url('/fonts/Inter-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-feature-settings: 'kern', 'liga', 'calt', 'ss01', 'ss02';
+}
+
+:root {
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+}
+
+body {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-primary);
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  font-kerning: normal;
+  hanging-punctuation: first last;
+}
+
+/* Heading Typography
+-------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--spacing-lg);
+  font-feature-settings: 'ss01' on, 'ss02' on;
+}
+
+h2 {
+  font-size: var(--font-size-3xl);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--spacing-md);
+  font-feature-settings: 'ss01' on;
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-sm);
+}
+
+h4 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+h5 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
+}
+
+h6 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Body Text Typography
+-------------------------------------------------- */
+p {
+  margin: 0 0 var(--spacing-md);
+  max-width: 75ch;
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  letter-spacing: 0.01em;
+}
+
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  letter-spacing: 0.02em;
+}
+
+/* Monospace Typography
+-------------------------------------------------- */
+code, pre {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-code);
+  tab-size: 2;
+  font-feature-settings: 'zero' 1, 'ss01' 1, 'ss02' 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Typography Utilities
+-------------------------------------------------- */
+.font-primary { font-family: var(--font-family-primary); }
+.font-secondary { font-family: var(--font-family-secondary); }
+.font-mono { font-family: var(--font-family-mono); }
+.font-bold { font-weight: var(--font-weight-bold); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-regular { font-weight: var(--font-weight-regular); }
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
+
+/* Responsive Typography
+-------------------------------------------------- */
+@media (max-width: 599px) {
+  h1 {
+    font-size: var(--font-size-3xl);
+    letter-spacing: -0.01em;
+  }
+  
+  h2 {
+    font-size: var(--font-size-2xl);
+    letter-spacing: -0.005em;
+  }
+  
+  h3 {
+    font-size: var(--font-size-xl);
+  }
+  
+  body {
+    font-size: calc(var(--font-size-base) * 0.9375);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1239px) {
+  h1 {
+    font-size: var(--font-size-3xl);
+    letter-spacing: -0.015em;
+  }
+  
+  h2 {
+    font-size: var(--font-size-2xl);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Print Typography
+-------------------------------------------------- */
+@media print {
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+  
+  h1 { font-size: 24pt; }
+  h2 { font-size: 20pt; }
+  h3 { font-size: 16pt; }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+}
+
+/* Accessibility Support
+-------------------------------------------------- */
+@media (forced-colors: active) {
+  body {
+    forced-color-adjust: none;
+  }
+}
+
+/* RTL Language Support
+-------------------------------------------------- */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* High Contrast & Color Schemes
+-------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: var(--color-text-primary-dark);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-primary-dark);
+  }
+}
+
+@media (prefers-contrast: high) {
+  body {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+}
