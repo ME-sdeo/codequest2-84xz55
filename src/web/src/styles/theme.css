@@ -1,0 +1,171 @@
+/**
+ * CodeQuest Theme System
+ * Material Design 3 implementation with light/dark modes
+ * Version: 1.0.0
+ */
+
+@import '../styles/variables.css';
+
+/* Theme Layer Configuration */
+@layer base, theme, components;
+
+/* Base Theme Styles */
+:root {
+  color-scheme: light dark;
+  accent-color: var(--color-primary);
+}
+
+/* Global Body Styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  contain: content;
+  margin: 0;
+  padding: 0;
+}
+
+/* Theme Wrapper */
+.app-theme {
+  min-height: 100vh;
+  transition: background-color 0.3s var(--ease-out),
+              color 0.3s var(--ease-out);
+  will-change: background-color, color;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Light Theme */
+.theme-light {
+  --color-background: #FFFFFF;
+  --color-background-paper: #F5F5F5;
+  --color-text-primary: rgba(0, 0, 0, 0.87);
+  --color-text-secondary: rgba(0, 0, 0, 0.6);
+  --color-text-disabled: rgba(0, 0, 0, 0.38);
+  color-scheme: light;
+}
+
+/* Dark Theme */
+.theme-dark {
+  --color-background: #121212;
+  --color-background-paper: #1E1E1E;
+  --color-text-primary: rgba(255, 255, 255, 0.87);
+  --color-text-secondary: rgba(255, 255, 255, 0.6);
+  --color-text-disabled: rgba(255, 255, 255, 0.38);
+  color-scheme: dark;
+}
+
+/* System Color Scheme Preferences */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Enhanced Theme Properties */
+:root {
+  --theme-shadow-sm: var(--shadow-sm);
+  --theme-shadow-md: var(--shadow-md);
+  --theme-shadow-lg: var(--shadow-lg);
+  --theme-radius-sm: var(--border-radius-sm);
+  --theme-radius-md: var(--border-radius-md);
+  --theme-radius-lg: var(--border-radius-lg);
+  --theme-transition: all var(--transition-normal) var(--ease-in-out);
+  --theme-focus-ring: 0 0 0 var(--focus-ring-width) var(--color-primary);
+  --theme-scrollbar-width: thin;
+  --theme-scrollbar-color: var(--color-primary) transparent;
+}
+
+/* Responsive Theme Adjustments */
+@media (max-width: 599px) {
+  body {
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1239px) {
+  body {
+    font-size: var(--font-size-md);
+  }
+}
+
+@media (min-width: 1240px) {
+  body {
+    font-size: var(--font-size-md);
+  }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --color-primary: CanvasText;
+    --color-background: Canvas;
+    --color-text-primary: CanvasText;
+    --color-text-secondary: CanvasText;
+  }
+}
+
+/* Print Optimizations */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .app-theme {
+    min-height: auto;
+  }
+  
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Custom Scrollbar Styling */
+* {
+  scrollbar-width: var(--theme-scrollbar-width);
+  scrollbar-color: var(--theme-scrollbar-color);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-primary);
+  border-radius: var(--theme-radius-sm);
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--theme-focus-ring);
+  border-radius: var(--theme-radius-sm);
+}
