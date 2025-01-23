@@ -1,0 +1,67 @@
+# Istio DestinationRule v1beta1
+# Purpose: Defines traffic policies, load balancing, and connection settings for CodeQuest services
+# Version: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: codequest-destination-rule
+  namespace: istio-system
+  labels:
+    app: codequest
+    component: traffic-policy
+    environment: production
+    managed-by: istio
+    version: v1
+
+spec:
+  # Target service for traffic policy
+  host: codequest-backend
+
+  # Service subsets for traffic splitting
+  subsets:
+    - name: backend
+      labels:
+        app: codequest
+        component: backend
+        version: v1
+    - name: frontend
+      labels:
+        app: codequest
+        component: frontend
+        version: v1
+
+  # Global traffic policy configuration
+  trafficPolicy:
+    # Load balancing configuration
+    loadBalancer:
+      simple: ROUND_ROBIN  # Simple round-robin distribution across instances
+
+    # Connection pool settings for improved resilience
+    connectionPool:
+      # TCP connection pool settings
+      tcp:
+        maxConnections: 1000           # Maximum concurrent connections
+        connectTimeout: 5s             # Connection timeout
+        tcpKeepalive:
+          time: 7200s                  # Keepalive duration
+          interval: 75s                # Keepalive interval
+
+      # HTTP connection pool settings
+      http:
+        http1MaxPendingRequests: 1000  # Max pending HTTP/1.1 requests
+        maxRequestsPerConnection: 10000 # Max requests per connection
+        maxRetries: 3                  # Maximum retry attempts
+        idleTimeout: 30s               # Connection idle timeout
+        h2MaxRequests: 1000           # Max HTTP/2 requests
+
+    # Circuit breaking configuration for fault tolerance
+    outlierDetection:
+      consecutive5xxErrors: 5          # Number of 5xx errors before ejection
+      interval: 30s                    # Interval for error detection
+      baseEjectionTime: 30s           # Base duration for host ejection
+      maxEjectionPercent: 10          # Maximum percentage of hosts to eject
+      minHealthPercent: 50            # Minimum healthy hosts percentage
+
+    # Security configuration
+    tls:
+      mode: ISTIO_MUTUAL              # Enable mutual TLS between services
