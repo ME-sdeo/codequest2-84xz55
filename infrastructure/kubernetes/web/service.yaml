@@ -1,0 +1,45 @@
+# Service configuration for CodeQuest web frontend
+# Exposes frontend pods internally and to ingress controller
+# Version: v1
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: codequest-web
+  namespace: default
+  labels:
+    app: codequest-web
+    tier: frontend
+    component: web
+    part-of: codequest
+  annotations:
+    # Enable Prometheus metrics scraping
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "80"
+    # Use Network Load Balancer type for better performance
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+spec:
+  # Use ClusterIP for internal pod access and ingress routing
+  type: ClusterIP
+  
+  # Port configuration for HTTP traffic
+  ports:
+    - port: 80 # Service port
+      targetPort: 80 # Container port
+      protocol: TCP
+      name: http
+
+  # Pod selector matching deployment labels
+  selector:
+    app: codequest-web
+    tier: frontend
+
+  # Disable session affinity for better load distribution
+  sessionAffinity: None
+  
+  # Don't publish pods that aren't ready
+  publishNotReadyAddresses: false
+  
+  # Use cluster-wide internal traffic policy
+  internalTrafficPolicy: Cluster
