@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package codequest.team;
+
+import "google/protobuf/timestamp.proto";  // v3.0.0
+import "google/protobuf/wrappers.proto";   // v3.0.0
+
+option go_package = "./team";
+option java_multiple_files = true;
+
+// Team service for managing teams and their points
+service TeamService {
+  // Creates a new team within an organization
+  rpc CreateTeam(CreateTeamRequest) returns (Team);
+  
+  // Updates team points with AI detection support
+  rpc UpdateTeamPoints(UpdateTeamPointsRequest) returns (Team);
+  
+  // Retrieves team leaderboard with AI vs standard point breakdown
+  rpc GetTeamLeaderboard(GetTeamLeaderboardRequest) returns (TeamLeaderboardResponse);
+  
+  // Adds a member to a team
+  rpc AddTeamMember(AddTeamMemberRequest) returns (TeamMember);
+  
+  // Removes a member from a team
+  rpc RemoveTeamMember(RemoveTeamMemberRequest) returns (RemoveTeamMemberResponse);
+  
+  // Updates team configuration
+  rpc UpdateTeamConfig(UpdateTeamConfigRequest) returns (Team);
+  
+  // Streams real-time point updates
+  rpc StreamTeamPoints(StreamTeamPointsRequest) returns (stream TeamPointsUpdate);
+}
+
+// Core team message with AI point tracking support
+message Team {
+  string id = 1;
+  string name = 2;
+  string organization_id = 3;
+  int32 standard_points = 4;
+  int32 ai_generated_points = 5;
+  int32 max_members = 6;
+  int32 current_members = 7;
+  PointConfig point_config = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+// Team member with point categorization
+message TeamMember {
+  string id = 1;
+  string team_id = 2;
+  string user_id = 3;
+  int32 standard_points = 4;
+  int32 ai_generated_points = 5;
+  MemberRole role = 6;
+  google.protobuf.Timestamp joined_at = 7;
+}
+
+// Point configuration for teams
+message PointConfig {
+  int32 code_check_in = 1;
+  int32 pull_request = 2;
+  int32 code_review = 3;
+  int32 bug_fix = 4;
+  int32 story_closure = 5;
+  double ai_modifier = 6;
+}
+
+// Member role enumeration
+enum MemberRole {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_LEAD = 1;
+  ROLE_SENIOR = 2;
+  ROLE_REGULAR = 3;
+  ROLE_JUNIOR = 4;
+}
+
+// Request to create a new team
+message CreateTeamRequest {
+  string name = 1;
+  string organization_id = 2;
+  int32 max_members = 3;
+  PointConfig point_config = 4;
+}
+
+// Request to update team points
+message UpdateTeamPointsRequest {
+  string team_id = 1;
+  string activity_type = 2;
+  int32 point_delta = 3;
+  bool is_ai_generated = 4;
+  string user_id = 5;
+}
+
+// Request to get team leaderboard
+message GetTeamLeaderboardRequest {
+  string organization_id = 1;
+  TimeRange time_range = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// Time range for leaderboard queries
+message TimeRange {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// Response containing team leaderboard data
+message TeamLeaderboardResponse {
+  repeated TeamLeaderboardEntry entries = 1;
+  int32 total_count = 2;
+}
+
+// Individual leaderboard entry
+message TeamLeaderboardEntry {
+  string team_id = 1;
+  string team_name = 2;
+  int32 total_points = 3;
+  int32 standard_points = 4;
+  int32 ai_generated_points = 5;
+  int32 rank = 6;
+}
+
+// Request to add team member
+message AddTeamMemberRequest {
+  string team_id = 1;
+  string user_id = 2;
+  MemberRole role = 3;
+}
+
+// Request to remove team member
+message RemoveTeamMemberRequest {
+  string team_id = 1;
+  string user_id = 2;
+}
+
+// Response for member removal
+message RemoveTeamMemberResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Request to update team configuration
+message UpdateTeamConfigRequest {
+  string team_id = 1;
+  string name = 2;
+  int32 max_members = 3;
+  PointConfig point_config = 4;
+}
+
+// Request to stream team points
+message StreamTeamPointsRequest {
+  string team_id = 1;
+}
+
+// Real-time point update message
+message TeamPointsUpdate {
+  string team_id = 1;
+  int32 total_points = 2;
+  int32 standard_points = 3;
+  int32 ai_generated_points = 4;
+  string activity_type = 5;
+  string user_id = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
